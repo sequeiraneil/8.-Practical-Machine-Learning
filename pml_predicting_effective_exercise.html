@@ -93,10 +93,10 @@ dim(data)</code></pre>
 <p>The challenge is to classify each observation into one of 5 classes. We have 19K+ rows that already have this information - and we <strong>just</strong> need to predict what it is going to be. 53 predictors to choose from.</p>
 <div id="the-choices-i-faced" class="section level2">
 <h2>The choices I faced:</h2>
-<ol style="list-style-type: lower-alpha">
-<li>Use a subset of the training set to build a model that can then be tested on the untrained training set sample &amp; check the out-of-sample error</li>
-<li>Use cross-validation functionality on a subset of the training set, check the out-of-sample error &amp; then see how it performs on the untrained subset.</li>
-<li>Use cross-validation on the entire training set &amp; check the Out-of-sample error</li>
+<ol style="list-style-type: decimal">
+<li><p>Use a subset of the training set to build a model that can then be tested on the untrained training set sample &amp; check the out-of-sample error</p></li>
+<li><p>Use cross-validation functionality on a subset of the training set, check the out-of-sample error &amp; then see how it performs on the untrained subset.</p></li>
+<li><p>Use cross-validation on the entire training set &amp; check the Out-of-sample error</p></li>
 </ol>
 </div>
 <div id="what-model-to-use" class="section level2">
@@ -144,6 +144,25 @@ print(model)</code></pre>
 <div id="oob---out-of-bag-error" class="section level2">
 <h2>OOB - out of bag error</h2>
 <p>The out-of-bag error in the final model is 0.18%, which essentially removes the need for a set-aside test set.</p>
+<pre class="r"><code>print(model)</code></pre>
+<pre><code>## Random Forest 
+## 
+## 15699 samples
+##    53 predictor
+##     5 classes: 'A', 'B', 'C', 'D', 'E' 
+## 
+## No pre-processing
+## Resampling: Cross-Validated (5 fold) 
+## Summary of sample sizes: 12558, 12562, 12558, 12560, 12558 
+## Resampling results across tuning parameters:
+## 
+##   mtry  Accuracy   Kappa      Accuracy SD   Kappa SD    
+##    2    0.9950316  0.9937152  0.0007326920  0.0009267102
+##   27    0.9975795  0.9969383  0.0010216609  0.0012924486
+##   53    0.9957960  0.9946823  0.0008234673  0.0010418235
+## 
+## Accuracy was used to select the optimal model using  the largest value.
+## The final value used for the model was mtry = 27.</code></pre>
 <pre class="r"><code>print(model$finalModel)</code></pre>
 <pre><code>## 
 ## Call:
@@ -160,7 +179,7 @@ print(model)</code></pre>
 ## C    0    5 2733    0    0 0.0018261505
 ## D    0    0   10 2562    1 0.0042751652
 ## E    0    0    0    3 2883 0.0010395010</code></pre>
-<p>Is that last statement really true? How does the model perform on our separately kept validation set?</p>
+<p>Is that last statement really true? How does the model perform on our separately kept validation set of 3923 observations?</p>
 <pre class="r"><code>Predicted &lt;- predict(model, validation[,-54])
 Actual &lt;- validation$classe
 
@@ -173,8 +192,8 @@ table(comparison)</code></pre>
 ##         3    0    1  682    0    0
 ##         4    0    0    0  643    0
 ##         5    0    0    0    0  719</code></pre>
-<p>Quite evidently, the model does a pretty good job of predicting the classe of the exercise on our validation set too!</p>
-<p>How about the test set?</p>
+<p>Quite evidently, the model does a pretty good job of predicting the classe of the exercise on our validation set too! 8 misclassifications.</p>
+<p>How about the test set? What does the course examiner think when I submit this?</p>
 <pre class="r"><code>testPrediction &lt;- predict(model, test)
 
 print(testPrediction)</code></pre>

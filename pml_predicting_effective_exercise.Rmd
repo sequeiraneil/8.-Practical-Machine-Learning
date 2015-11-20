@@ -54,9 +54,11 @@ The challenge is to classify each observation into one of 5 classes. We have 19K
 
 ## The choices I faced:
 
-a. Use a subset of the training set to build a model that can then be tested on the untrained training set sample & check the out-of-sample error 
-b. Use cross-validation functionality on a subset of the training set, check the out-of-sample error & then see how it performs on the untrained subset.
-c. Use cross-validation on the entire training set & check the Out-of-sample error 
+1. Use a subset of the training set to build a model that can then be tested on the untrained training set sample & check the out-of-sample error 
+
+2. Use cross-validation functionality on a subset of the training set, check the out-of-sample error & then see how it performs on the untrained subset.
+
+3. Use cross-validation on the entire training set & check the Out-of-sample error 
 
 ## What model to use?  
 The choice boiled down to a simple linear regression or RandomForest. The second sounded like some place I can - & do - easily get lost in - so I decided to explore it in a bit more detail. Two birds with one stone in a randomForest (pun intended!) 
@@ -96,11 +98,12 @@ So, we have an accuracy of nearly 99% on the training data, with 27 predictors u
 The out-of-bag error in the final model is 0.18%, which essentially removes the need for a set-aside test set.
 
 ```{r}
+print(model)
 print(model$finalModel)
 
 ```
 
-Is that last statement really true? How does the model perform on our separately kept validation set? 
+Is that last statement really true? How does the model perform on our separately kept validation set of 3923 observations? 
 
 ```{r}
 Predicted <- predict(model, validation[,-54])
@@ -110,9 +113,9 @@ comparison <- as.data.frame(cbind(Predicted, Actual))
 table(comparison)
 ```
 
-Quite evidently, the model does a pretty good job of predicting the classe of the exercise on our validation set too!
+Quite evidently, the model does a pretty good job of predicting the classe of the exercise on our validation set too! 8 misclassifications.
 
-How about the test set?
+How about the test set? What does the course examiner think when I submit this?
 
 ```{r}
 testPrediction <- predict(model, test)
