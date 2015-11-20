@@ -1,0 +1,130 @@
+---
+title: "PML_predicting_effective_exercise"
+output: html_document
+---
+
+#Background
+
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify *how much* of a particular activity they do, but they rarely quantify *how well they do it*. 
+
+In this project, we will use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website [here](http://groupware.les.inf.puc-rio.br/har) (the section on the Weight Lifting Exercise Dataset). 
+
+The objective of this project is to predict the manner in which they did the exercise (which is the **"classe"** variable). 
+
+
+# Preliminaries
+Load in the libraries I'm going to use
+
+```{r, message = FALSE, echo = TRUE}
+library(caret)
+library(randomForest)
+
+```
+
+
+... and read in the Test & Training data. The training data is [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv) and the test data is [here](https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv) For this exercise, I've downloaded the data to my local machine. Set seed at 1234
+ 
+```{r, echo=TRUE}
+set.seed(1234)
+data <- read.csv("pml-training.csv")
+test <- read.csv("pml-testing.csv")
+```
+
+
+Some basic data cleansing exercises follow. Remove identifier columns such as username & timestamp on both the training & test data. Also replace #DIV/0! errors with NA.
+
+```{r, echo=TRUE}
+data <- data[,7:ncol(data)]
+test <- test[,7:ncol(test)]
+data[data == "#DIV/0!"] <- NA
+
+```
+
+I suspect that columns that have little or no training data are of limited use for prediction, so get rid of them. This will also help reduce the number of predictors & hopefullly help speed up the computations!
+
+```{r, echo = TRUE}
+data <- data[, !apply(data, 2, function(x) any(is.na(x)))]
+dim(data)
+```
+
+
+# Resetting Expectations? 
+The challenge is to classify each observation into one of 5 classes. We have 19K+ rows that already have this information - and we **just** need to predict what it is going to be. 
+53 predictors to choose from. 
+
+## The choices I faced:
+
+a. Use a subset of the training set to build a model that can then be tested on the untrained training set sample & check the out-of-sample error 
+b. Use cross-validation functionality on a subset of the training set, check the out-of-sample error & then see how it performs on the untrained subset.
+c. Use cross-validation on the entire training set & check the Out-of-sample error 
+
+## What model to use?  
+The choice boiled down to a simple linear regression or RandomForest. The second sounded like some place I can - & do - easily get lost in - so I decided to explore it in a bit more detail. Two birds with one stone in a randomForest (pun intended!) 
+
+## Out-of-sample error
+Hopefully, the out-of-sample (or out-of-bag if I chose RandomForest) error is low, & the model has a high accuracy (> 70%) so this will be my benchmark. Why 70%? It's better than a random 1 in 5 chance of getting it right, & I've no expectations of this model getting it 90%.
+
+
+# Let the processing begin!
+
+I partitioned the training data into 2 - training, & validation. 
+
+```{r, echo = TRUE}
+trainIndex <- createDataPartition(data$classe, p = 0.8, list = FALSE)
+
+training <- data[trainIndex,]
+validation <- data[-trainIndex,]
+
+```
+
+
+Armed with the caret & randomForest packages, I then built a 5-fold cross-validated model. While admittedly, a smaller fold increases bias, I have limited computational power at my disposal. So 5-fold it will be!
+
+```{r, echo = TRUE, cache = TRUE}
+model <- train(classe ~ ., data = training, 
+               method = "rf", 
+               trControl = trainControl(method = "cv", number = 5),
+               prox = TRUE, allowParallel = TRUE)
+
+print(model)
+```
+
+So, we have an accuracy of nearly 99% on the training data, with 27 predictors used for this model. 
+
+
+## OOB - out of bag error
+The out-of-bag error in the final model is 0.18%, which essentially removes the need for a set-aside test set.
+
+```{r}
+print(model$finalModel)
+
+```
+
+Is that last statement really true? How does the model perform on our separately kept validation set? 
+
+```{r}
+Predicted <- predict(model, validation[,-54])
+Actual <- validation$classe
+
+comparison <- as.data.frame(cbind(Predicted, Actual))
+table(comparison)
+```
+
+Quite evidently, the model does a pretty good job of predicting the classe of the exercise on our validation set too!
+
+How about the test set?
+
+```{r}
+testPrediction <- predict(model, test)
+
+print(testPrediction)
+```
+
+Aaand.. I just submitted the test set results with 100% accuracy on those.
+
+
+# Conclusion
+
+It appears that randomForest & caret can be extremely powerful packages to classify outcomes. Cross-validation can be built into the model itself, which makes the process of building model simpler (especially for those of us not statistically proficient). Interpretation of the randomForest model itself is not very simple, but it makes for some pretty accurate predictions. 
+
+
